@@ -1,2 +1,2 @@
 # NewsPix-Mobile
-Mobile app version of NewsPix, big changes to view hierarchy forthcoming
+Mobile app version of NewsPix, currently in development.
