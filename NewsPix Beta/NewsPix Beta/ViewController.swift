@@ -9,7 +9,7 @@
 import UIKit
 
 class ViewController: UIViewController, UIScrollViewDelegate {
-
+    
     @IBOutlet var swipeRight: UISwipeGestureRecognizer!
     @IBOutlet var swipeLeft: UISwipeGestureRecognizer!
     @IBOutlet weak var scrollView: UIScrollView!
@@ -21,52 +21,39 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet weak var imageViewTopConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageViewTrailingConstraint: NSLayoutConstraint!
     
-    var index = 0
+    override func preferredStatusBarStyle() -> UIStatusBarStyle {
+        return UIStatusBarStyle.LightContent
+    }
+
     var lastZoomScale: CGFloat = -1
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        // Do any additional setup after loading the view
         
         //Download content from server
-//        altParseJSON(getData("http://localhost:5000/get_all_stories")!)
-        let numberOfCalls = 8
-        for _ in 1...numberOfCalls {
-                parseJSON(getData("http://dev.newspix.today/random_story")!)
+        if images.count == 0 {
+            altParseJSON(getData("http://dev.newspix.today/get_all_stories/keene_sentinel")!)
         }
+        
+//        altParseJSON(getData("http://dev.newspix.today/get_all_stories/keene_sentinel")!)
+//        let numberOfCalls = 8
+//        for _ in 1...numberOfCalls {
+//                parseJSON(getData("http://dev.newspix.today/random_story")!)
+//        }
 
         //Initialize Display
-        self.pictureTitle.setTitle(names[self.index],forState: UIControlState.Normal)
-        self.imageView.image = images[self.index]
-
-        //Initialize list of read headlines if save data exists, otherwise set to empty read array
-        if let archive = userDefaults.arrayForKey("Seen") {
-            for headline in archive {
-                read.append(headline as! String)
-                print(read)
-            }
-        }
-        else {
-            userDefaults.setObject(read, forKey: "Seen")
-        }
-        
-        //Update read array to reflect addition/removal of stories only if read has nonzero length
-        if read.count > 0 {
-            for i in 0...read.count {
-                if names.indexOf(read[i]) == -1 {
-                    read.removeAtIndex(i)
-                    userDefaults.setObject(read, forKey: "Seen")
-                }
-            }
-        }
-        
-        //Get number of unread stories by comparing lengths of names, read
-        let unread = names.count - read.count
-        print(unread)
+        self.pictureTitle.setTitle(names[index],forState: UIControlState.Normal)
+        self.imageView.image = images[index]
         
         scrollView.delegate = self
         updateZoom()
         updateConstraints()
+        
+        //Always make pictureTitle fit in one line
+        self.pictureTitle.titleLabel?.adjustsFontSizeToFitWidth = true
+        
+        scrollView.decelerationRate = UIScrollViewDecelerationRateFast
 
     }
     
@@ -83,57 +70,48 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBAction func didPressArrow(sender: UIButton!) {
         let direction = sender.currentTitle!
         if direction == "<" {
-            self.index -= 1
-            if self.index < 0 {self.index = names.count-1}
+            index -= 1
+            if index < 0 {index = names.count-1}
         }
         if direction == ">" {
-            self.index += 1
-            if self.index > names.count-1 {self.index = 0}
+            index += 1
+            if index > names.count-1 {index = 0}
         }
         self.imageView.fadeOut()
         self.pictureTitle.fadeOut()
-        self.imageView.image = images[self.index]
-        self.pictureTitle.setTitle(names[self.index],forState: UIControlState.Normal)
+        self.imageView.image = images[index]
+        self.pictureTitle.setTitle(names[index],forState: UIControlState.Normal)
         self.pictureTitle.fadeIn()
         self.imageView.fadeIn()
         
-        //Update read stories
-        if (read.indexOf(names[self.index]) == -1) {
-            read.append(names[self.index])
-            userDefaults.setObject(read, forKey: "Seen")
-        }
     }
+    
     @IBAction func didPressTitle() {
-        let url = urls[self.index];
+        let url = urls[index];
         UIApplication.sharedApplication().openURL(url);
     }
     
     @IBAction func handleSwipe(recognizer:UISwipeGestureRecognizer) {
         if (recognizer.direction == UISwipeGestureRecognizerDirection.Right) {
-            self.index -= 1
-            if self.index < 0 {self.index = names.count-1}
+            index -= 1
+            if index < 0 {index = names.count-1}
         }
         if (recognizer.direction == UISwipeGestureRecognizerDirection.Left) {
-            self.index += 1
-            if self.index > names.count-1 {self.index = 0}
+            index += 1
+            if index > names.count-1 {index = 0}
         }
         self.imageView.fadeOut()
         self.pictureTitle.fadeOut()
-        self.imageView.image = images[self.index]
-        self.pictureTitle.setTitle(names[self.index],forState: UIControlState.Normal)
+        self.imageView.image = images[index]
+        self.pictureTitle.setTitle(names[index],forState: UIControlState.Normal)
         self.pictureTitle.fadeIn()
         self.imageView.fadeIn()
         
-        //Update read stories
-        if (read.indexOf(names[self.index]) == -1) {
-            read.append(names[self.index])
-            userDefaults.setObject(read, forKey: "Seen")
-        }
     }
 
     @IBAction func shareButtonClicked(sender: UIBarButtonItem) {
         let textToShare = self.pictureTitle.currentTitle!
-        let myWebsite = urls[self.index]
+        let myWebsite = urls[index]
         let objectsToShare = [textToShare, myWebsite]
         let activityVC = UIActivityViewController(activityItems: objectsToShare, applicationActivities: nil)
         
@@ -185,6 +163,7 @@ class ViewController: UIViewController, UIScrollViewDelegate {
             imageViewBottomConstraint.constant = vPadding
             
             view.layoutIfNeeded()
+        
         }
     }
     
@@ -207,6 +186,8 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
+
+    
     // UIScrollViewDelegate
     // -----------------------
     
@@ -218,4 +199,4 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         return imageView
         }
     
-    } //Do not delete! End of ViewController class
+} //Do not delete! End of ViewController class

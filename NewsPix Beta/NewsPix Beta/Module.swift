@@ -10,6 +10,7 @@ import Foundation
 import UIKit
 
 //Carousel Lists
+public var index: Int = 0
 //Bank of images
 public var images: [UIImage!] = []
 //Bank of headlines
@@ -17,10 +18,6 @@ public var names: [String] = []
 //Bank of URLs
 public var urls: [NSURL] = []
 
-public let userDefaults = NSUserDefaults.standardUserDefaults()
-//Keep track of how many stories are unread - this info must persist between app launches
-//This info must be retained somehow between app refreshes
-public var read: [String] = []
 
 //Functions for obtaining, parsing JSONs
 
@@ -43,7 +40,7 @@ func parseJSON(inputData: NSData) {
     } catch {
         print(error)
     }
-    //Update the carousel lists - json can now be used as a normal dictionary
+    //Update the carousel lists
     let jsonHeadline: String! = json["headline"] as! String
     let jsonURL: String! = json["url"] as! String
     let jsonImage: String! = json["image"] as! String
