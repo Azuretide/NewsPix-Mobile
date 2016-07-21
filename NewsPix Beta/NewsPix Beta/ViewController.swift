@@ -16,11 +16,14 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var pictureTitle: UIButton!
     
+    
+    @IBOutlet weak var imageViewHeight: NSLayoutConstraint!
     @IBOutlet weak var imageViewBottomConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageViewTopConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageViewTrailingConstraint: NSLayoutConstraint!
     
+    //Sets status bar to white
     override func preferredStatusBarStyle() -> UIStatusBarStyle {
         return UIStatusBarStyle.LightContent
     }
@@ -29,61 +32,40 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view
+        initial_frame = view.frame
         
         //Download content from server
         if images.count == 0 {
             altParseJSON(getData("http://dev.newspix.today/get_all_stories/keene_sentinel")!)
         }
-        
-//        altParseJSON(getData("http://dev.newspix.today/get_all_stories/keene_sentinel")!)
-//        let numberOfCalls = 8
-//        for _ in 1...numberOfCalls {
-//                parseJSON(getData("http://dev.newspix.today/random_story")!)
-//        }
+        //Provide default images if server connection fails
+        if images.count == 0 {
+            names = ["Newspix", "Keene Sentinel"]
+            images = [UIImage(named: "newspixlogo.png")!, UIImage(named: "Keene Sentinel.png")!]
+            urls = [NSURL(string: "http://dev.newspix.today")!, NSURL(string: "http://www.sentinelsource.com/")!]
+        }
 
         //Initialize Display
         self.pictureTitle.setTitle(names[index],forState: UIControlState.Normal)
         self.imageView.image = images[index]
         
-        scrollView.delegate = self
-        updateZoom()
-        updateConstraints()
-        
         //Always make pictureTitle fit in one line
         self.pictureTitle.titleLabel?.adjustsFontSizeToFitWidth = true
         
-        scrollView.decelerationRate = UIScrollViewDecelerationRateFast
-
     }
     
     override func viewWillAppear(animated: Bool) {
         navigationItem.title = "Sentinel Source"
-        
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
-    @IBAction func didPressArrow(sender: UIButton!) {
-        let direction = sender.currentTitle!
-        if direction == "<" {
-            index -= 1
-            if index < 0 {index = names.count-1}
-        }
-        if direction == ">" {
-            index += 1
-            if index > names.count-1 {index = 0}
-        }
-        self.imageView.fadeOut()
-        self.pictureTitle.fadeOut()
-        self.imageView.image = images[index]
-        self.pictureTitle.setTitle(names[index],forState: UIControlState.Normal)
-        self.pictureTitle.fadeIn()
-        self.imageView.fadeIn()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         
+        //scrollView Initialization settings
+        scrollView.delegate = self
+        updateZoom()
+        updateConstraints()
+        scrollView.decelerationRate = UIScrollViewDecelerationRateFast
     }
     
     @IBAction func didPressTitle() {
@@ -100,13 +82,17 @@ class ViewController: UIViewController, UIScrollViewDelegate {
             index += 1
             if index > names.count-1 {index = 0}
         }
+        
         self.imageView.fadeOut()
         self.pictureTitle.fadeOut()
+        
+        //Transitionary code
         self.imageView.image = images[index]
         self.pictureTitle.setTitle(names[index],forState: UIControlState.Normal)
+        scrollView.zoomScale = 1.0
+
         self.pictureTitle.fadeIn()
         self.imageView.fadeIn()
-        
     }
 
     @IBAction func shareButtonClicked(sender: UIBarButtonItem) {
@@ -142,9 +128,10 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     }
     
     func updateConstraints() {
-        if let image = imageView.image {
-            let imageWidth = image.size.width
-            let imageHeight = image.size.height
+        if let _ = imageView.image {
+            
+            let imageWidth = imageSizeAfterAspectFit(imageView).width
+            let imageHeight = imageSizeAfterAspectFit(imageView).height
             
             let viewWidth = scrollView.bounds.size.width
             let viewHeight = scrollView.bounds.size.height
@@ -162,38 +149,47 @@ class ViewController: UIViewController, UIScrollViewDelegate {
             imageViewTopConstraint.constant = vPadding
             imageViewBottomConstraint.constant = vPadding
             
+            imageViewHeight.constant = imageSizeAfterAspectFit(imageView).height
+            
             view.layoutIfNeeded()
-        
+            
+            //Disable scrolling if image is fully zoomed out
+            if scrollView.zoomScale == 1.0 {
+                scrollView.scrollEnabled = false
+            }
+            else {
+                scrollView.scrollEnabled = true
+            }
         }
+        
     }
     
     // Zoom to show as much image as possible unless image is smaller than the scroll view
+    // **Called only upon view initialization and upon device rotation**
     private func updateZoom() {
         if let image = imageView.image {
             var minZoom = min(scrollView.bounds.size.width / image.size.width,
                 scrollView.bounds.size.height / image.size.height)
 
             if minZoom > 1 { minZoom = 1 }
-
             
             scrollView.minimumZoomScale = 1
-            scrollView.maximumZoomScale = 10
-            
+            scrollView.maximumZoomScale = 8
+
             // Force scrollViewDidZoom fire if zoom did not change
             if minZoom == lastZoomScale { minZoom += 0.000001 }
             scrollView.zoomScale = minZoom
             lastZoomScale = scrollView.zoomScale
+            
         }
     }
-    
-
     
     // UIScrollViewDelegate
     // -----------------------
     
     func scrollViewDidZoom(scrollView: UIScrollView) {
         updateConstraints()
-        }
+    }
     
     func viewForZoomingInScrollView(scrollView: UIScrollView) -> UIView? {
         return imageView

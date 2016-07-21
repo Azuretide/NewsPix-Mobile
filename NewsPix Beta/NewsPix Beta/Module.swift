@@ -18,6 +18,8 @@ public var names: [String] = []
 //Bank of URLs
 public var urls: [NSURL] = []
 
+//Initial view frame from main viewController
+public var initial_frame: CGRect = CGRectZero
 
 //Functions for obtaining, parsing JSONs
 
@@ -71,4 +73,38 @@ func altParseJSON(inputData: NSData) {
         urls.append(NSURL(string: jsonURL)!)
     }
     
+}
+
+//Method for managing aspect fit image sizes
+func imageSizeAfterAspectFit(imgview: UIImageView) -> CGSize {
+    
+    var newwidth: CGFloat
+    var newheight: CGFloat
+    let image: UIImage = imgview.image!
+    
+    if (image.size.height >= image.size.width) {
+        newheight = initial_frame.height
+        newwidth = (image.size.width/image.size.height) * newheight;
+        
+        if (newwidth > initial_frame.width){
+            let diff: CGFloat = initial_frame.width - newwidth
+            newheight = newheight + diff/newheight * newheight
+            newwidth = initial_frame.width
+        }
+    }
+    else {
+        newwidth = initial_frame.width;
+        newheight = (image.size.height/image.size.width) * newwidth
+        
+        if (newheight > initial_frame.height) {
+            let diff: CGFloat = initial_frame.height - newheight
+            newwidth = newwidth + diff/newwidth * newwidth
+            newheight = initial_frame.height
+        }
+    }
+    
+//    //adapt UIImageView size to image size
+//    imgview.frame = CGRectMake(imgview.frame.origin.x + (imgview.frame.size.width-newwidth)/2, imgview.frame.origin.y + (imgview.frame.size.height-newheight)/2, newwidth, newheight)
+    
+    return CGSizeMake(newwidth, newheight);
 }
